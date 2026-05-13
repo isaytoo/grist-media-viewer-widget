@@ -31,10 +31,17 @@ Un widget Grist puissant pour visualiser des fichiers multimédias directement d
 | Audio | mp3, wav, flac, aac, m4a, opus |
 | Texte | txt, md, csv, json, xml, yaml, log, js, py, html, css |
 
-### 🚀 Installation
+### � URLs du widget
+
+| Hébergeur | URL |
+|-----------|-----|
+| Vercel | `https://grist-media-viewer.vercel.app` |
+| GitHub Pages | `https://isaytoo.github.io/grist-media-viewer-widget` |
+
+### �🚀 Installation
 
 1. Dans votre document Grist, ajoutez une vue **Widget personnalisé**
-2. Entrez l'URL du widget : `https://grist-media-viewer.vercel.app`
+2. Entrez l'une des URLs ci-dessus
 3. Dans le **Panneau Créateur**, mappez la colonne :
    - **URL du fichier** *(obligatoire)* — colonne contenant l'URL ou les URLs des fichiers
    - **Nom du fichier** *(optionnel)* — colonne contenant le nom d'affichage
@@ -88,10 +95,17 @@ A powerful Grist widget to display multimedia files directly inside your documen
 | Audio | mp3, wav, flac, aac, m4a, opus |
 | Text | txt, md, csv, json, xml, yaml, log, js, py, html, css |
 
+### 🔗 Widget URLs
+
+| Host | URL |
+|------|-----|
+| Vercel | `https://grist-media-viewer.vercel.app` |
+| GitHub Pages | `https://isaytoo.github.io/grist-media-viewer-widget` |
+
 ### 🚀 Installation
 
 1. In your Grist document, add a **Custom Widget** view
-2. Enter the widget URL: `https://grist-media-viewer.vercel.app`
+2. Enter one of the URLs above
 3. In the **Creator Panel**, map the columns:
    - **File URL** *(required)* — column containing the file URL(s)
    - **File Name** *(optional)* — column containing the display name

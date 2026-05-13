@@ -1,0 +1,423 @@
+<!--
+  Grist Media Viewer Widget
+  Copyright 2026 Said Hamadou (isaytoo)
+  Licensed under the Apache License, Version 2.0
+  https://github.com/isaytoo/grist-media-viewer-widget
+-->
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grist Media Viewer</title>
+  <script src="https://docs.getgrist.com/grist-plugin-api.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #3b82f6;
+      --primary-dark: #2563eb;
+      --danger: #ef4444;
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface2: #334155;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== TOOLBAR ===== */
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--surface2);
+      flex-shrink: 0;
+      flex-wrap: wrap;
+      min-height: 48px;
+    }
+    #file-info {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 300px;
+    }
+    #file-type-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: var(--primary);
+      color: #fff;
+      text-transform: uppercase;
+    }
+    .tb-btn {
+      background: var(--surface2);
+      border: none;
+      color: var(--text);
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    .tb-btn:hover { background: var(--primary); }
+    .tb-btn:disabled { opacity: .4; cursor: default; }
+    .tb-btn.active { background: var(--primary); }
+    .tb-sep { width: 1px; height: 24px; background: var(--surface2); flex-shrink: 0; }
+    #nav-info { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+    #zoom-level { font-size: 12px; color: var(--text-muted); min-width: 40px; text-align: center; }
+
+    /* ===== MAIN AREA ===== */
+    #main {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* ===== GALLERY SIDEBAR ===== */
+    #gallery {
+      width: 100px;
+      background: var(--surface);
+      border-right: 1px solid var(--surface2);
+      overflow-y: auto;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 6px;
+      flex-shrink: 0;
+      transition: width .2s;
+    }
+    #gallery.hidden { width: 0; padding: 0; overflow: hidden; }
+    #gallery::-webkit-scrollbar { width: 4px; }
+    #gallery::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 2px; }
+    .thumb {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 2px solid transparent;
+      background: var(--surface2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+      transition: border-color .15s;
+      position: relative;
+    }
+    .thumb:hover { border-color: var(--primary); }
+    .thumb.active { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(59,130,246,.4); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; }
+    .thumb-num {
+      position: absolute;
+      bottom: 2px;
+      right: 4px;
+      font-size: 9px;
+      color: rgba(255,255,255,.7);
+      font-weight: 700;
+    }
+
+    /* ===== VIEWER AREA ===== */
+    #viewer-area {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      background: var(--bg);
+    }
+
+    /* Image viewer */
+    #img-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      cursor: grab;
+      user-select: none;
+    }
+    #img-container.dragging { cursor: grabbing; }
+    #img-viewer {
+      max-width: none;
+      max-height: none;
+      transform-origin: center center;
+      transition: transform .1s;
+      display: block;
+    }
+
+    /* PDF viewer */
+    #pdf-viewer {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: none;
+    }
+
+    /* Video viewer */
+    #video-viewer {
+      max-width: 100%;
+      max-height: 100%;
+      display: none;
+      border-radius: 8px;
+    }
+
+    /* Audio viewer */
+    #audio-container {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      padding: 40px;
+    }
+    #audio-icon { font-size: 80px; }
+    #audio-viewer { width: 100%; max-width: 500px; }
+
+    /* Text viewer */
+    #text-viewer {
+      display: none;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      padding: 24px;
+      background: #1a1a2e;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      color: #a8ff78;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Empty / error states */
+    #empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 40px;
+    }
+    #empty-state .big-icon { font-size: 64px; }
+    #empty-state h3 { font-size: 18px; color: var(--text); }
+    #empty-state p { font-size: 14px; }
+
+    /* ===== FULLSCREEN OVERLAY ===== */
+    #fullscreen-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.95);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    #fullscreen-overlay.active { display: flex; }
+    #fs-img {
+      max-width: 95vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 4px;
+    }
+    #fs-close {
+      position: absolute;
+      top: 16px;
+      right: 20px;
+      background: rgba(255,255,255,.15);
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #fs-close:hover { background: var(--danger); }
+    #fs-nav {
+      position: absolute;
+      bottom: 20px;
+      display: flex;
+      gap: 12px;
+    }
+    #fs-nav button {
+      background: rgba(255,255,255,.15);
+      border: none;
+      color: #fff;
+      font-size: 20px;
+      padding: 10px 20px;
+      border-radius: 30px;
+      cursor: pointer;
+    }
+    #fs-nav button:hover { background: var(--primary); }
+    #fs-counter {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.6);
+      color: #fff;
+      font-size: 13px;
+      padding: 4px 16px;
+      border-radius: 20px;
+    }
+
+    /* ===== SETUP SCREEN ===== */
+    #setup-screen {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: var(--bg);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 10;
+      padding: 24px;
+      text-align: center;
+    }
+    #setup-screen.active { display: flex; }
+    #setup-screen h2 { font-size: 20px; }
+    #setup-screen p { color: var(--text-muted); font-size: 14px; max-width: 360px; }
+
+    /* Scrollbars */
+    #gallery::-webkit-scrollbar { width: 4px; }
+    #text-viewer::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--surface2); border-radius: 3px; }
+
+    /* Swipe hint on mobile */
+    #swipe-hint {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,.6);
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      pointer-events: none;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Toolbar -->
+<div id="toolbar">
+  <span id="file-info">Aucun fichier</span>
+  <span id="file-type-badge" style="display:none"></span>
+  <div class="tb-sep"></div>
+  <span id="nav-info" style="display:none"></span>
+  <button class="tb-btn" id="btn-prev" title="Précédent" disabled>◀</button>
+  <button class="tb-btn" id="btn-next" title="Suivant" disabled>▶</button>
+  <div class="tb-sep"></div>
+  <!-- Image controls -->
+  <button class="tb-btn img-ctrl" id="btn-zoom-out" title="Dézoomer" disabled>🔍−</button>
+  <span id="zoom-level" class="img-ctrl" style="display:none">100%</span>
+  <button class="tb-btn img-ctrl" id="btn-zoom-in" title="Zoomer" disabled>🔍+</button>
+  <button class="tb-btn img-ctrl" id="btn-zoom-fit" title="Ajuster" disabled>⊡</button>
+  <button class="tb-btn img-ctrl" id="btn-rotate-l" title="Rotation gauche" disabled>↺</button>
+  <button class="tb-btn img-ctrl" id="btn-rotate-r" title="Rotation droite" disabled>↻</button>
+  <button class="tb-btn img-ctrl" id="btn-fullscreen" title="Plein écran" disabled>⛶</button>
+  <div class="tb-sep img-ctrl"></div>
+  <!-- Gallery toggle -->
+  <button class="tb-btn" id="btn-gallery" title="Galerie" style="display:none">🖼️</button>
+  <!-- Download -->
+  <button class="tb-btn" id="btn-download" title="Télécharger" disabled>⬇️</button>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <!-- Gallery sidebar -->
+  <div id="gallery" class="hidden"></div>
+
+  <!-- Viewer area -->
+  <div id="viewer-area">
+    <!-- States -->
+    <div id="empty-state">
+      <div class="big-icon">📂</div>
+      <h3>Aucun fichier sélectionné</h3>
+      <p>Sélectionnez une ligne dans Grist contenant une URL de fichier</p>
+    </div>
+
+    <!-- Image -->
+    <div id="img-container" style="display:none">
+      <img id="img-viewer" src="" alt="" />
+    </div>
+
+    <!-- PDF -->
+    <iframe id="pdf-viewer" title="PDF Viewer"></iframe>
+
+    <!-- Video -->
+    <video id="video-viewer" controls></video>
+
+    <!-- Audio -->
+    <div id="audio-container">
+      <div id="audio-icon">🎵</div>
+      <audio id="audio-viewer" controls></audio>
+    </div>
+
+    <!-- Text/Code -->
+    <div id="text-viewer"></div>
+
+    <!-- Swipe hint -->
+    <div id="swipe-hint">← Glisser pour naviguer →</div>
+  </div>
+
+  <!-- Setup overlay -->
+  <div id="setup-screen">
+    <div style="font-size:64px">🎬</div>
+    <h2>Grist Media Viewer</h2>
+    <p>Configurez une colonne URL dans le Panneau Créateur pour afficher vos fichiers</p>
+    <p style="font-size:12px;margin-top:8px;">Formats supportés : Images · PDF · Vidéo · Audio · Texte</p>
+  </div>
+</div>
+
+<!-- Fullscreen overlay -->
+<div id="fullscreen-overlay">
+  <button id="fs-close" onclick="closeFullscreen()">✕</button>
+  <span id="fs-counter"></span>
+  <img id="fs-img" src="" alt="" />
+  <div id="fs-nav">
+    <button onclick="navigate(-1)">◀ Préc.</button>
+    <button onclick="navigate(1)">Suiv. ▶</button>
+  </div>
+</div>
+
+<script src="widget.js"></script>
+</body>
+</html>

@@ -196,11 +196,68 @@
       display: none;
       flex-direction: column;
       align-items: center;
-      gap: 20px;
+      justify-content: center;
+      gap: 28px;
       padding: 40px;
+      width: 100%;
     }
-    #audio-icon { font-size: 80px; }
-    #audio-viewer { width: 100%; max-width: 500px; }
+    #audio-icon { font-size: 72px; line-height: 1; }
+    #audio-title {
+      font-size: 16px; font-weight: 600; color: var(--text);
+      text-align: center; max-width: 420px;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    #audio-player-box {
+      background: var(--surface);
+      border: 1px solid var(--surface2);
+      border-radius: 16px;
+      padding: 24px 28px;
+      width: 100%; max-width: 480px;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    #audio-seek-row { display: flex; align-items: center; gap: 10px; }
+    #audio-current, #audio-duration {
+      font-size: 11px; color: var(--text-muted);
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap; min-width: 36px;
+    }
+    #audio-seek {
+      flex: 1; -webkit-appearance: none; appearance: none;
+      height: 5px; border-radius: 3px; outline: none; cursor: pointer;
+      background: linear-gradient(to right, var(--primary) 0%, var(--surface2) 0%);
+    }
+    #audio-seek::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 14px; height: 14px;
+      border-radius: 50%; background: var(--primary); cursor: pointer;
+      box-shadow: 0 0 4px rgba(59,130,246,.5);
+    }
+    #audio-controls-row {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+    }
+    .ap-btn {
+      background: var(--surface2); border: none; color: var(--text);
+      width: 40px; height: 40px; border-radius: 50%; cursor: pointer;
+      font-size: 16px; display: flex; align-items: center; justify-content: center;
+      transition: background .15s;
+    }
+    .ap-btn:hover { background: var(--primary); }
+    #ap-play {
+      width: 52px; height: 52px; font-size: 20px;
+      background: var(--primary);
+    }
+    #ap-play:hover { background: var(--primary-dark); }
+    #audio-volume-row { display: flex; align-items: center; gap: 8px; }
+    #audio-vol-icon { font-size: 14px; color: var(--text-muted); cursor: pointer; }
+    #audio-volume {
+      flex: 1; -webkit-appearance: none; appearance: none;
+      height: 4px; border-radius: 2px; outline: none; cursor: pointer;
+      background: linear-gradient(to right, var(--text-muted) 100%, var(--surface2) 100%);
+    }
+    #audio-volume::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 12px; height: 12px;
+      border-radius: 50%; background: var(--text-muted); cursor: pointer;
+    }
+    #audio-viewer { display: none; }
 
     /* Text viewer */
     #text-viewer {
@@ -388,7 +445,27 @@
     <!-- Audio -->
     <div id="audio-container">
       <div id="audio-icon">🎵</div>
-      <audio id="audio-viewer" controls></audio>
+      <div id="audio-title">—</div>
+      <div id="audio-player-box">
+        <!-- Seek bar -->
+        <div id="audio-seek-row">
+          <span id="audio-current">0:00</span>
+          <input type="range" id="audio-seek" min="0" max="100" value="0" step="0.1">
+          <span id="audio-duration">0:00</span>
+        </div>
+        <!-- Controls -->
+        <div id="audio-controls-row">
+          <button class="ap-btn" id="ap-rew" title="−10s">⏮</button>
+          <button class="ap-btn" id="ap-play" title="Lecture / Pause">▶</button>
+          <button class="ap-btn" id="ap-fwd" title="+10s">⏭</button>
+        </div>
+        <!-- Volume -->
+        <div id="audio-volume-row">
+          <span id="audio-vol-icon" title="Muet">🔊</span>
+          <input type="range" id="audio-volume" min="0" max="1" step="0.02" value="1">
+        </div>
+      </div>
+      <audio id="audio-viewer"></audio>
     </div>
 
     <!-- Text/Code -->

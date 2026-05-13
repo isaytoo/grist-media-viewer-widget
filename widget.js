@@ -207,15 +207,104 @@ function renderVideo(url) {
 }
 
 // --- AUDIO ---
+var audioEl = null;
+
+function formatTime(s) {
+  if (isNaN(s)) return '0:00';
+  var m = Math.floor(s / 60);
+  var sec = Math.floor(s % 60);
+  return m + ':' + (sec < 10 ? '0' : '') + sec;
+}
+
 function renderAudio(url) {
   setImageControls(false);
-  var c = document.getElementById('audio-container');
-  c.style.display = 'flex';
-  var a = document.getElementById('audio-viewer');
-  a.src = url;
-  // Show filename as title
-  document.getElementById('audio-icon').textContent = '🎵';
+  document.getElementById('audio-container').style.display = 'flex';
+  document.getElementById('audio-title').textContent = getFileName(url);
+
+  audioEl = document.getElementById('audio-viewer');
+  audioEl.src = url;
+  audioEl.volume = 1;
+
+  // Reset UI
+  document.getElementById('ap-play').textContent = '▶';
+  document.getElementById('audio-seek').value = 0;
+  document.getElementById('audio-current').textContent = '0:00';
+  document.getElementById('audio-duration').textContent = '0:00';
+  updateVolumeBar(1);
+
+  audioEl.onloadedmetadata = function() {
+    document.getElementById('audio-duration').textContent = formatTime(audioEl.duration);
+    document.getElementById('audio-seek').max = audioEl.duration;
+  };
+  audioEl.ontimeupdate = function() {
+    document.getElementById('audio-current').textContent = formatTime(audioEl.currentTime);
+    document.getElementById('audio-seek').value = audioEl.currentTime;
+    updateSeekBar();
+  };
+  audioEl.onended = function() {
+    document.getElementById('ap-play').textContent = '▶';
+  };
 }
+
+function updateSeekBar() {
+  var seek = document.getElementById('audio-seek');
+  var pct = audioEl && audioEl.duration ? (audioEl.currentTime / audioEl.duration * 100) : 0;
+  seek.style.background = 'linear-gradient(to right, var(--primary) ' + pct + '%, var(--surface2) ' + pct + '%)';
+}
+
+function updateVolumeBar(val) {
+  var vol = document.getElementById('audio-volume');
+  vol.value = val;
+  vol.style.background = 'linear-gradient(to right, var(--text-muted) ' + (val * 100) + '%, var(--surface2) ' + (val * 100) + '%)';
+  document.getElementById('audio-vol-icon').textContent = val === 0 ? '🔇' : val < 0.5 ? '🔉' : '🔊';
+}
+
+// Play/Pause
+document.getElementById('ap-play').addEventListener('click', function() {
+  if (!audioEl) return;
+  if (audioEl.paused) {
+    audioEl.play();
+    this.textContent = '⏸';
+  } else {
+    audioEl.pause();
+    this.textContent = '▶';
+  }
+});
+// Rewind -10s
+document.getElementById('ap-rew').addEventListener('click', function() {
+  if (!audioEl) return;
+  audioEl.currentTime = Math.max(0, audioEl.currentTime - 10);
+});
+// Forward +10s
+document.getElementById('ap-fwd').addEventListener('click', function() {
+  if (!audioEl) return;
+  audioEl.currentTime = Math.min(audioEl.duration || 0, audioEl.currentTime + 10);
+});
+// Seek bar drag
+document.getElementById('audio-seek').addEventListener('input', function() {
+  if (!audioEl) return;
+  audioEl.currentTime = parseFloat(this.value);
+  updateSeekBar();
+});
+// Volume
+document.getElementById('audio-volume').addEventListener('input', function() {
+  if (!audioEl) return;
+  audioEl.volume = parseFloat(this.value);
+  updateVolumeBar(parseFloat(this.value));
+});
+// Mute toggle
+document.getElementById('audio-vol-icon').addEventListener('click', function() {
+  if (!audioEl) return;
+  if (audioEl.volume > 0) {
+    audioEl._prevVol = audioEl.volume;
+    audioEl.volume = 0;
+    updateVolumeBar(0);
+  } else {
+    var v = audioEl._prevVol || 1;
+    audioEl.volume = v;
+    updateVolumeBar(v);
+  }
+});
 
 // --- TEXT ---
 function renderText(url) {

@@ -35,7 +35,7 @@ Un widget Grist puissant pour visualiser des fichiers multimédias directement d
 
 | Hébergeur | URL |
 |-----------|-----|
-| Vercel | `https://grist-media-viewer.vercel.app` |
+| Vercel | `https://grist-media-viewer-widget.vercel.app` |
 | GitHub Pages | `https://isaytoo.github.io/grist-media-viewer-widget` |
 
 ### �🚀 Installation
@@ -99,7 +99,7 @@ A powerful Grist widget to display multimedia files directly inside your documen
 
 | Host | URL |
 |------|-----|
-| Vercel | `https://grist-media-viewer.vercel.app` |
+| Vercel | `https://grist-media-viewer-widget.vercel.app` |
 | GitHub Pages | `https://isaytoo.github.io/grist-media-viewer-widget` |
 
 ### 🚀 Installation
